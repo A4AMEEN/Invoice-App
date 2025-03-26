@@ -1,0 +1,195 @@
+<div class="invoice-wizard-container">
+    <div class="wizard-card">
+        <!-- Step Indicators -->
+        <div class="step-indicators">
+            <div class="step" [class.active]="currentStep === 1">
+                <div class="step-box">1</div>
+                Select Customer
+            </div>
+            <div class="step" [class.active]="currentStep === 2">
+                <div class="step-box">2</div>
+                Select Products
+            </div>
+            <div class="step" [class.active]="currentStep === 3">
+                <div class="step-box">3</div>
+                Quantity & Price
+            </div>
+            <div class="step" [class.active]="currentStep === 4">
+                <div class="step-box">4</div>
+                Invoice Summary
+            </div>
+        </div>
+
+        <!-- Step 1: Customer Selection -->
+        <div *ngIf="currentStep === 1" class="step-content">
+            <h2>Select Customer</h2>
+            <select id="customerSelect" name="customerSelect" [(ngModel)]="selectedCustomer"
+                (ngModelChange)="onCustomerSelect($event.id)" class="form-control" required>
+                <option value="" disabled selected>Select a Customer</option>
+                <option *ngFor="let customer of customers" [ngValue]="customer">
+                    {{customer.name}}
+                </option>
+            </select>
+            <div class="navigation-buttons">
+                <button class="btn btn-primary" (click)="nextStep()" [disabled]="!selectedCustomer">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Product Selection -->
+        <div *ngIf="currentStep === 2" class="step-content product-selection">
+            <h2>Select Products</h2>
+            <div class="product-selection-container">
+                <select [(ngModel)]="selectedProductId" class="form-control product-dropdown"
+                    placeholder="Select a Product">
+                    <option value="" disabled>Select a Product</option>
+                    <option *ngFor="let product of products" [value]="product.id"
+                        [disabled]="isProductSelected(product)">
+                        {{product.name}} - ₹{{product.basePrice}}
+                    </option>
+                </select>
+                <button class="btn btn-primary add-product-btn" (click)="addProduct()" [disabled]="!selectedProductId">
+                    Add Product
+                </button>
+            </div>
+
+            <div class="selected-products" *ngIf="selectedProducts.length > 0">
+                <h2>Selected Products</h2>
+                <div class="selected-product-list">
+                    <div *ngFor="let product of selectedProducts" class="selected-product-item">
+                        <div class="product-info">
+                            <span>{{product.name}} - ₹{{product.basePrice}}</span>
+                        </div>
+                        <button class="remove-product" (click)="removeProduct(product)">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navigation-buttons">
+                <button class="btn btn-secondary" (click)="prevStep()">Previous</button>
+                <button class="btn btn-primary" (click)="nextStep()" [disabled]="selectedProducts.length === 0">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Quantity & Price -->
+        <div *ngIf="currentStep === 3" class="step-content">
+            <h2>Quantity & Price</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let item of invoiceItems">
+                        <td>{{item.productName}}</td>
+                        <td>₹{{item.unitPrice}}</td>
+                        <td>
+                            <input type="number" [(ngModel)]="item.quantity"
+                                (ngModelChange)="updateProductQuantity(item.productId, $event)" min="1"
+                                class="form-control quantity-input">
+                        </td>
+                        <td>₹{{item.totalPrice.toFixed(2)}}</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Subtotal</strong></td>
+                        <td><strong>₹{{getSubtotal().toFixed(2)}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Shipping Charge</strong></td>
+                        <td><strong>₹{{shippingCharge.toFixed(2)}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Discount</strong></td>
+                        <td><strong>-₹{{appliedDiscount.toFixed(2)}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Tax (9%)</strong></td>
+                        <td><strong>₹{{getTaxAmount().toFixed(2)}}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Total Amount</strong></td>
+                        <td><strong>₹{{getTotalInvoiceAmount().toFixed(2)}}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="navigation-buttons">
+                <button class="btn btn-secondary" (click)="prevStep()">Previous</button>
+                <button class="btn btn-primary" (click)="finalizeInvoice()">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Invoice Summary -->
+        <div *ngIf="currentStep === 4" class="step-content">
+            <h2>Invoice Summary</h2>
+            <div class="customer-details" *ngIf="selectedCustomer">
+                <h3>Customer Details</h3>
+                <p><strong>Name:</strong> {{selectedCustomer.name}}</p>
+                <p><strong>Email:</strong> {{selectedCustomer.email}}</p>
+                <p><strong>Address:</strong> {{selectedCustomer.address}}</p>
+            </div>
+        
+            <div class="invoice-items">
+                <h3>Invoice Items</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of invoiceItems">
+                            <td>{{item.productName}}</td>
+                            <td>{{item.quantity}}</td>
+                            <td>₹{{item.unitPrice}}</td>
+                            <td>₹{{item.totalPrice.toFixed(2)}}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3"><strong>Subtotal</strong></td>
+                            <td><strong>₹{{getSubtotal().toFixed(2)}}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><strong>Shipping Charge</strong></td>
+                            <td><strong>₹{{shippingCharge.toFixed(2)}}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><strong>Discount</strong></td>
+                            <td><strong>-₹{{appliedDiscount.toFixed(2)}}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><strong>Tax (9%)</strong></td>
+                            <td><strong>₹{{getTaxAmount().toFixed(2)}}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3"><strong>Total Amount</strong></td>
+                            <td><strong>₹{{getTotalInvoiceAmount().toFixed(2)}}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        
+            <div class="navigation-buttons">
+                <button class="btn btn-secondary" (click)="prevStep()">Previous</button>
+                <button class="btn btn-success" (click)="generateInvoicePDF()">Generate Invoice</button>
+            </div>
+        </div>
+    </div>
+</div>
